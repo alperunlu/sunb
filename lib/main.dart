@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage> {
 
     var lat = locationData.latitude;
     var lon = locationData.longitude;
-    var apiKey = '437d4abaaf647b67ae0f5c70f46c4f14';
+    var apiKey = 'MY_API_KEY';
 
     var url =
         'https://api.openweathermap.org/data/2.5/find?lat=$lat&lon=$lon&cnt=50&appid=$apiKey';
