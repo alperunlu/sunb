@@ -2,15 +2,12 @@
 
 Sunbusters
 
-## Getting Started
+Sunbusters v0.0.5: code optimized
 
-This project is a starting point for a Flutter application.
+Sunbusters v0.0.4: flutter location package version updated, error handling function implemented
 
-A few resources to get you started if this is your first Flutter project:
+Sunbusters v0.0.3: minor bugfixes regarding android manifest 
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Sunbusters v0.0.2: android manifest updated for permissions, logo and version information
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Sunbusters v0.0.1: first public release
