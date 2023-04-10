@@ -24,8 +24,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int _radioValue = 1; // default is only sunny
   String _location = '';
   List<dynamic> _sunnyCities = [];
+
+  void _onRadioSelected(int? value) {
+    setState(() {
+      _radioValue = value ?? 1;
+    });
+  }
 
   Future<void> _getSunnyCities() async {
     setState(() {
@@ -50,8 +57,15 @@ class _HomePageState extends State<HomePage> {
     var lon = locationData.longitude;
     var apiKey = '437d4abaaf647b67ae0f5c70f46c4f14';
 
-    var url =
-        'https://api.openweathermap.org/data/2.5/find?lat=$lat&lon=$lon&cnt=50&appid=$apiKey';
+    var url;
+
+    if (_radioValue == 1) {
+      url =
+      'https://api.openweathermap.org/data/2.5/find?lat=$lat&lon=$lon&cnt=10&appid=$apiKey&weather=clear';
+    } else {
+      url =
+      'https://api.openweathermap.org/data/2.5/find?lat=$lat&lon=$lon&cnt=10&appid=$apiKey&weather=clear,clouds';
+    }
 
     try {
       var response = await http.get(Uri.parse(url));
@@ -87,7 +101,8 @@ class _HomePageState extends State<HomePage> {
         _location = 'Error: ${e.toString()}';
       });
     }
-  }
+  } // function end
+
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +114,18 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            RadioListTile(
+              title: Text('Only Sunny'),
+              value: 1,
+              groupValue: _radioValue,
+              onChanged: _onRadioSelected,
+            ),
+            RadioListTile(
+              title: Text('Sunny or Partly Cloudy'),
+              value: 2,
+              groupValue: _radioValue,
+              onChanged: _onRadioSelected,
+            ),
             ElevatedButton(
               child: Text('Get Sunny Cities'),
               onPressed: _getSunnyCities,
