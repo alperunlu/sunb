@@ -27,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   int _radioValue = 1; // default is only sunny
   String _location = '';
   List<dynamic> _sunnyCities = [];
+  Set<String> _cityNames = Set<String>();
 
   void _onRadioSelected(int? value) {
     setState(() {
@@ -40,69 +41,83 @@ class _HomePageState extends State<HomePage> {
       _sunnyCities = [];
     });
 
+    // Clearing the lists
+    _sunnyCities.clear();
+    _cityNames.clear();
+
     LocationData locationData;
     var location = new Location();
 
     try {
       locationData = await location.getLocation();
     } catch (e) {
-      print('Error: ${e.toString()}');
       setState(() {
-        _location = 'Error getting location.';
+        _location = 'Error: ${e.toString()}';
       });
       return;
     }
 
-    var lat = locationData.latitude;
-    var lon = locationData.longitude;
-    var apiKey = 'MY_API_KEY';
+    var lat0 = locationData.latitude;
+    var lon0 = locationData.longitude;
+    var lat = lat0;
+    var lon = lon0;
+    var latitudes = [lat!-0.5, lat!-0.25, lat, lat!+0.25, lat+0.5];
+    var longitudes = [lon!-0.5, lon, lon+0.5];
 
-    var url;
+    var apiKey = '437d4abaaf647b67ae0f5c70f46c4f14';
 
-    if (_radioValue == 1) {
-      url =
-      'https://api.openweathermap.org/data/2.5/find?lat=$lat&lon=$lon&cnt=10&appid=$apiKey&weather=clear';
-    } else {
-      url =
-      'https://api.openweathermap.org/data/2.5/find?lat=$lat&lon=$lon&cnt=10&appid=$apiKey&weather=clear,clouds';
-    }
+    for (var lat in latitudes) {
+      for (var lon in longitudes) {
+        var url =
+            'https://api.openweathermap.org/data/2.5/find?lat=$lat&lon=$lon&cnt=50&appid=$apiKey';
 
-    try {
-      var response = await http.get(Uri.parse(url));
+        try {
+          var response = await http.get(Uri.parse(url));
 
-      if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        if (data['list'] != null && data['list'].isNotEmpty) {
-          for (var city in data['list']) {
-            var weather = city['weather'][0];
-            if (weather['main'] == 'Clear' || weather['main'] == 'Clouds') {
-              setState(() {
-                _sunnyCities.add(city['name']);
-              });
+          if (response.statusCode == 200) {
+            var data = jsonDecode(response.body);
+            if (data['list'] != null && data['list'].isNotEmpty) {
+              for (var city in data['list']) {
+                var cityName = city['name'];
+                var weather = city['weather'][0];
+                var iconcode = weather['icon'];
+                if (_radioValue == 1) {
+                  if (weather['description'] == 'clear sky' && !_cityNames.contains(cityName)) {
+                    setState(() {
+                      _sunnyCities.add([cityName, iconcode]);
+                      _cityNames.add(cityName);
+                    });
+                  }
+                }
+                if (_radioValue == 2) {
+                  if ((weather['description'] == 'clear sky' || weather['description'] == 'few clouds') && !_cityNames.contains(cityName)) {
+                    setState(() {
+                      _sunnyCities.add([cityName, iconcode]);
+                      _cityNames.add(cityName);
+                    });
+                  }
+                }
+              }
             }
+          } else {
+            setState(() {
+              _location = 'Error: ${response.statusCode}';
+            });
+            return;
           }
+        } catch (e) {
           setState(() {
-            _location = 'Your location: ${data['list'][0]['name']}';
+            _location = 'Error: ${e.toString()}';
           });
-        } else {
-          setState(() {
-            _location = 'No sunny cities found.';
-          });
+          return;
         }
-      } else {
-        print('Error: ${response.statusCode}');
-        setState(() {
-          _location = 'Error: ${response.statusCode}';
-        });
       }
-    } catch (e) {
-      print('Error: ${e.toString()}');
-      setState(() {
-        _location = 'Error: ${e.toString()}';
-      });
     }
-  } // function end
-
+    setState(() {
+      _location = 'Your location: $lat0, $lon0';
+    });
+    //_sunnyCities = _sunnyCities.toSet().toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,31 +129,45 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            RadioListTile(
-              title: Text('Only Sunny'),
-              value: 1,
-              groupValue: _radioValue,
-              onChanged: _onRadioSelected,
-            ),
-            RadioListTile(
-              title: Text('Sunny or Partly Cloudy'),
-              value: 2,
-              groupValue: _radioValue,
-              onChanged: _onRadioSelected,
-            ),
             ElevatedButton(
-              child: Text('Get Sunny Cities'),
-              onPressed: _getSunnyCities,
+              onPressed: () {
+
+                _getSunnyCities();
+              },
+              child: Text('Find sunny cities'),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 20.0),
             Text(_location),
-            SizedBox(height: 20),
+            SizedBox(height: 20.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Radio(
+                  value: 1,
+                  groupValue: _radioValue,
+                  onChanged: _onRadioSelected,
+                ),
+                Text('Only sunny'),
+                Radio(
+                  value: 2,
+                  groupValue: _radioValue,
+                  onChanged: _onRadioSelected,
+                ),
+                Text('Partly cloudy'),
+              ],
+            ),
+            SizedBox(height: 20.0),
             Expanded(
               child: ListView.builder(
                 itemCount: _sunnyCities.length,
                 itemBuilder: (context, index) {
+                  var city = _sunnyCities[index][0];
+                  var iconcode = _sunnyCities[index][1];
+                  var iconurl =
+                      'https://openweathermap.org/img/w/$iconcode.png';
                   return ListTile(
-                    title: Text(_sunnyCities[index]),
+                    leading: Image.network(iconurl),
+                    title: Text(city),
                   );
                 },
               ),
@@ -149,3 +178,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
