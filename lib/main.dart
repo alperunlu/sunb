@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
     var latitudes = [lat!-0.5, lat!-0.25, lat, lat!+0.25, lat+0.5];
     var longitudes = [lon!-0.5, lon, lon+0.5];
 
-    var apiKey = '437d4abaaf647b67ae0f5c70f46c4f14';
+    var apiKey = 'MY_API_KEY';
 
     for (var lat in latitudes) {
       for (var lon in longitudes) {
