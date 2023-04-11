@@ -2,6 +2,8 @@
 
 Sunbusters
 
+Sunbusters v0.0.9: listview bugfix
+
 Sunbusters v0.0.8: search range extended, icons added for list items
 
 Sunbusters v0.0.7: HTTP 401 error bugfix
