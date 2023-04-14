@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
-import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+  import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 void main() => runApp(SunnyCitiesApp());
@@ -35,6 +36,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   Future<void> _getSunnyCities() async {
     setState(() {
       _location = 'Getting location...';
@@ -61,8 +70,8 @@ class _HomePageState extends State<HomePage> {
     var lon0 = locationData.longitude;
     var lat = lat0;
     var lon = lon0;
-    var latitudes = [lat!-0.5, lat!-0.25, lat, lat!+0.25, lat+0.5];
-    var longitudes = [lon!-0.5, lon, lon+0.5];
+    var latitudes = [lat!-0.6, lat!-0.30, lat, lat!+0.3, lat+0.6];
+    var longitudes = [lon!-0.6, lon, lon+0.6];
 
     var apiKey = '437d4abaaf647b67ae0f5c70f46c4f14';
 
@@ -168,6 +177,11 @@ class _HomePageState extends State<HomePage> {
                   return ListTile(
                     leading: Image.network(iconurl),
                     title: Text(city),
+                    onTap: () async {
+                      var city = _sunnyCities[index][0];
+                      var mapsUrl = 'https://www.google.com/maps/search/?api=1&query=$city';
+                      launchURL(mapsUrl);
+                    },
                   );
                 },
               ),
