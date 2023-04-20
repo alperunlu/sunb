@@ -3,8 +3,20 @@ import 'package:location/location.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-void main() => runApp(SunnyCitiesApp());
+//void main() => runApp(SunnyCitiesApp());
+
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
+  runApp(MaterialApp(
+    home: SunnyCitiesApp(),
+    ),
+  );
+}
+
 
 class SunnyCitiesApp extends StatelessWidget {
   @override
@@ -25,10 +37,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  InterstitialAd? _interstitialAd;
   int _radioValue = 1; // default is only sunny
   String _location = '';
   List<dynamic> _sunnyCities = [];
   Set<String> _cityNames = Set<String>();
+  // TODO: replace this test ad unit with your own ad unit.
+  final adUnitId = "ca-app-pub-7994669731946359/8396744976";
 
   void _onRadioSelected(int? value) {
     setState(() {
@@ -44,11 +59,52 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Loads an interstitial ad.
+  void _loadAd() {
+    InterstitialAd.load(
+        adUnitId: adUnitId,
+        request: const AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          // Called when an ad is successfully received.
+          onAdLoaded: (InterstitialAd ad) {
+            ad.fullScreenContentCallback = FullScreenContentCallback(
+              // Called when the ad showed the full screen content.
+                onAdShowedFullScreenContent: (ad) {},
+                // Called when an impression occurs on the ad.
+                onAdImpression: (ad) {},
+                // Called when the ad failed to show full screen content.
+                onAdFailedToShowFullScreenContent: (ad, err) {
+                  ad.dispose();
+                },
+                // Called when the ad dismissed full screen content.
+                onAdDismissedFullScreenContent: (ad) {
+                  ad.dispose();
+                },
+                // Called when a click is recorded for an ad.
+                onAdClicked: (ad) {});
+
+            // Keep a reference to the ad so you can show it later.
+            _interstitialAd = ad;
+          },
+          // Called when an ad request failed.
+          onAdFailedToLoad: (LoadAdError error) {
+            // ignore: avoid_print
+            print('InterstitialAd failed to load: $error');
+          },
+        ));
+  }
+
+  //
+
   Future<void> _getSunnyCities() async {
+
     setState(() {
       _location = 'Getting location...';
       _sunnyCities = [];
     });
+
+    _loadAd(); //
+    _showAlert(context);
 
     // Clearing the lists
     _sunnyCities.clear();
@@ -125,6 +181,9 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _location = 'Your location: $lat0, $lon0';
     });
+    if (_sunnyCities.isEmpty) {
+      _sunnyCities.add(["No cities found.", "50d"]);
+    }
     //_sunnyCities = _sunnyCities.toSet().toList();
   }
 
@@ -140,7 +199,6 @@ class _HomePageState extends State<HomePage> {
           children: <Widget>[
             ElevatedButton(
               onPressed: () {
-
                 _getSunnyCities();
               },
               child: Text('Find sunny cities'),
@@ -191,5 +249,30 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  void _showAlert(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Sunbusters'),
+          content: Text('You are using a beta version of Sunbusters.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _interstitialAd?.show();
+              },
+              child: const Text('OK'),
+            )
+          ],
+        ));
+  }
+
+  @override
+  void dispose() {
+    _interstitialAd?.dispose();
+    super.dispose();
+  }
+
 }
 
