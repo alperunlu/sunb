@@ -4,18 +4,18 @@ Sunbusters is a mobile app built with Flutter that finds sunny and partly cloudy
 
 ## Changelog
 
-Sunbusters v0.1.2: build with new flutter version, google ads activated
-Sunbusters v0.1.1: "no cities found" warning message added to search algorithm
-Sunbusters v0.1.0: google map hyperlinks added for list items, search range extended
-Sunbusters v0.0.9: bugfix for listview
-Sunbusters v0.0.8: search range extended, icons added for list items
-Sunbusters v0.0.7: HTTP 401 error bugfix
-Sunbusters v0.0.6: configuration options added for sunny or partial cloudy search
-Sunbusters v0.0.5: code optimized
-Sunbusters v0.0.4: flutter location package version updated, error handling function implemented
-Sunbusters v0.0.3: minor bugfixes regarding android manifest 
-Sunbusters v0.0.2: android manifest updated for permissions, logo and version information
-Sunbusters v0.0.1: first public release
+Sunbusters v0.1.2: build with new flutter version, google ads activated <br />
+Sunbusters v0.1.1: "no cities found" warning message added to search algorithm <br />
+Sunbusters v0.1.0: google map hyperlinks added for list items, search range extended <br />
+Sunbusters v0.0.9: bugfix for listview <br />
+Sunbusters v0.0.8: search range extended, icons added for list items <br />
+Sunbusters v0.0.7: HTTP 401 error bugfix <br />
+Sunbusters v0.0.6: configuration options added for sunny or partial cloudy search <br />
+Sunbusters v0.0.5: code optimized <br />
+Sunbusters v0.0.4: flutter location package version updated, error handling function implemented <br />
+Sunbusters v0.0.3: minor bugfixes regarding android manifest  <br />
+Sunbusters v0.0.2: android manifest updated for permissions, logo and version information <br />
+Sunbusters v0.0.1: first public release <br />
 
 ## Getting Started
 
