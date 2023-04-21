@@ -4,6 +4,7 @@ Sunbusters is a mobile app built with Flutter that finds sunny and partly cloudy
 
 ## Changelog
 
+Sunbusters v0.1.3: beta version information popup disabled <br />
 Sunbusters v0.1.2: build with new flutter version, google ads activated <br />
 Sunbusters v0.1.1: "no cities found" warning message added to search algorithm <br />
 Sunbusters v0.1.0: google map hyperlinks added for list items, search range extended <br />
