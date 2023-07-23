@@ -25,7 +25,7 @@ To use Sunbusters, you will need to have Flutter and an Android or iOS device or
 1. Clone or download the Sunbusters repository to your local machine.
 2. Open the project in a code editor of your choice.
 3. In the terminal, navigate to the project directory and run `flutter pub get` to install the necessary packages.
-4. Connect your Android or iOS device or emulator to your computer.
+4. Connect your Android device or emulator to your computer.
 5. In the terminal, run `flutter run` to build and launch the app.
 
 ## Features
