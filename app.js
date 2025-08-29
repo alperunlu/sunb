@@ -1,16 +1,15 @@
 import React, { useState } from "react";
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  Button, 
-  FlatList, 
-  TouchableOpacity, 
-  Image, 
-  Linking 
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  Linking,
 } from "react-native";
 import * as Location from "expo-location";
-import { AdMobInterstitial } from "expo-ads-admob";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function App() {
   const [locationText, setLocationText] = useState("");
@@ -18,33 +17,22 @@ export default function App() {
   const [radioValue, setRadioValue] = useState(1); // 1 = only sunny, 2 = partly cloudy
 
   const apiKey = "437d4abaaf647b67ae0f5c70f46c4f14";
-  const adUnitId = "ca-app-pub-7994669731946359/8396744976"; // Replace with your ID
-
-  const loadAd = async () => {
-    await AdMobInterstitial.setAdUnitID(adUnitId);
-    await AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true });
-    await AdMobInterstitial.showAdAsync();
-  };
 
   const getSunnyCities = async () => {
     setLocationText("Getting location...");
     setSunnyCities([]);
 
     try {
-      // Request permission
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setLocationText("Permission denied.");
         return;
       }
 
-      // Get current location
       let location = await Location.getCurrentPositionAsync({});
       let lat0 = location.coords.latitude;
       let lon0 = location.coords.longitude;
       setLocationText(`Your location: ${lat0.toFixed(4)}, ${lon0.toFixed(4)}`);
-
-      //await loadAd();
 
       const latitudes = [lat0 - 0.6, lat0 - 0.3, lat0, lat0 + 0.3, lat0 + 0.6];
       const longitudes = [lon0 - 0.6, lon0, lon0 + 0.6];
@@ -60,19 +48,26 @@ export default function App() {
             const data = await response.json();
 
             if (data.list && data.list.length > 0) {
-              data.list.forEach(city => {
+              data.list.forEach((city) => {
                 const cityName = city.name;
                 const description = city.weather[0].description;
                 const iconCode = city.weather[0].icon;
 
-                if (radioValue === 1 && description === "clear sky" && !citySet.has(cityName)) {
+                if (
+                  radioValue === 1 &&
+                  description === "clear sky" &&
+                  !citySet.has(cityName)
+                ) {
                   cities.push({ name: cityName, icon: iconCode });
                   citySet.add(cityName);
                 }
 
-                if (radioValue === 2 && 
-                    (description === "clear sky" || description === "few clouds") &&
-                    !citySet.has(cityName)) {
+                if (
+                  radioValue === 2 &&
+                  (description === "clear sky" ||
+                    description === "few clouds") &&
+                  !citySet.has(cityName)
+                ) {
                   cities.push({ name: cityName, icon: iconCode });
                   citySet.add(cityName);
                 }
@@ -95,19 +90,33 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sunbusters</Text>
+    <LinearGradient colors={["#e0f7fa", "#ffffff"]} style={styles.container}>
+      <Text style={styles.title}>☀️ Sunbusters</Text>
 
-      <Button title="Find sunny cities" onPress={getSunnyCities} />
+      <TouchableOpacity style={styles.button} onPress={getSunnyCities}>
+        <Text style={styles.buttonText}>Find Sunny Cities</Text>
+      </TouchableOpacity>
 
       <Text style={styles.location}>{locationText}</Text>
 
       <View style={styles.radioContainer}>
-        <TouchableOpacity onPress={() => setRadioValue(1)} style={styles.radioOption}>
-          <Text style={{ color: radioValue === 1 ? "blue" : "black" }}>● Only sunny</Text>
+        <TouchableOpacity
+          onPress={() => setRadioValue(1)}
+          style={[
+            styles.radioOption,
+            radioValue === 1 && styles.radioActive,
+          ]}
+        >
+          <Text style={styles.radioText}>Only Sunny</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setRadioValue(2)} style={styles.radioOption}>
-          <Text style={{ color: radioValue === 2 ? "blue" : "black" }}>● Partly cloudy</Text>
+        <TouchableOpacity
+          onPress={() => setRadioValue(2)}
+          style={[
+            styles.radioOption,
+            radioValue === 2 && styles.radioActive,
+          ]}
+        >
+          <Text style={styles.radioText}>Partly Cloudy</Text>
         </TouchableOpacity>
       </View>
 
@@ -116,28 +125,92 @@ export default function App() {
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.cityItem}
+            style={styles.cityCard}
             onPress={() =>
-              Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${item.name}`)
+              Linking.openURL(
+                `https://www.google.com/maps/search/?api=1&query=${item.name}`
+              )
             }
           >
             <Image
-              source={{ uri: `https://openweathermap.org/img/w/${item.icon}.png` }}
-              style={{ width: 40, height: 40, marginRight: 10 }}
+              source={{
+                uri: `https://openweathermap.org/img/w/${item.icon}.png`,
+              }}
+              style={styles.cityIcon}
             />
-            <Text>{item.name}</Text>
+            <Text style={styles.cityName}>{item.name}</Text>
           </TouchableOpacity>
         )}
       />
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, textAlign: "center" },
-  location: { marginVertical: 10, textAlign: "center" },
-  radioContainer: { flexDirection: "row", justifyContent: "center", marginVertical: 10 },
-  radioOption: { marginHorizontal: 10 },
-  cityItem: { flexDirection: "row", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: "#ddd" },
+  container: { flex: 1, padding: 20 },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginVertical: 20,
+    color: "#00796B",
+  },
+  button: {
+    backgroundColor: "#FF9800",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    alignItems: "center",
+    marginVertical: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  location: {
+    marginVertical: 10,
+    textAlign: "center",
+    fontSize: 16,
+    color: "#444",
+  },
+  radioContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginVertical: 10,
+  },
+  radioOption: {
+    backgroundColor: "#f1f1f1",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginHorizontal: 5,
+  },
+  radioActive: {
+    backgroundColor: "#4CAF50",
+  },
+  radioText: {
+    color: "#000",
+    fontWeight: "bold",
+  },
+  cityCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    padding: 15,
+    borderRadius: 12,
+    marginVertical: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  cityIcon: { width: 40, height: 40, marginRight: 15 },
+  cityName: { fontSize: 18, fontWeight: "600", color: "#333" },
 });
