@@ -15,8 +15,23 @@ export default function App() {
   const [locationText, setLocationText] = useState("");
   const [sunnyCities, setSunnyCities] = useState([]);
   const [radioValue, setRadioValue] = useState(1); // 1 = only sunny, 2 = partly cloudy
+  const [currentCoords, setCurrentCoords] = useState({ lat: null, lon: null });
 
   const apiKey = "437d4abaaf647b67ae0f5c70f46c4f14";
+
+  // Haversine formülü ile iki nokta arası mesafeyi km cinsinden hesaplar
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Dünya yarıçapı (km)
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // km
+  }
 
   const getSunnyCities = async () => {
     setLocationText("Getting location...");
@@ -32,6 +47,8 @@ export default function App() {
       let location = await Location.getCurrentPositionAsync({});
       let lat0 = location.coords.latitude;
       let lon0 = location.coords.longitude;
+
+      setCurrentCoords({ lat: lat0, lon: lon0 });
       setLocationText(`Your location: ${lat0.toFixed(4)}, ${lon0.toFixed(4)}`);
 
       const latitudes = [lat0 - 0.6, lat0 - 0.3, lat0, lat0 + 0.3, lat0 + 0.6];
@@ -58,7 +75,12 @@ export default function App() {
                   description === "clear sky" &&
                   !citySet.has(cityName)
                 ) {
-                  cities.push({ name: cityName, icon: iconCode });
+                  cities.push({
+                    name: cityName,
+                    icon: iconCode,
+                    lat: city.coord.lat,
+                    lon: city.coord.lon,
+                  });
                   citySet.add(cityName);
                 }
 
@@ -68,7 +90,12 @@ export default function App() {
                     description === "few clouds") &&
                   !citySet.has(cityName)
                 ) {
-                  cities.push({ name: cityName, icon: iconCode });
+                  cities.push({
+                    name: cityName,
+                    icon: iconCode,
+                    lat: city.coord.lat,
+                    lon: city.coord.lon,
+                  });
                   citySet.add(cityName);
                 }
               });
@@ -79,8 +106,15 @@ export default function App() {
         }
       }
 
+      // Mesafeye göre sıralama
       if (cities.length === 0) {
         cities.push({ name: "No cities found.", icon: "50d" });
+      } else {
+        cities.sort((a, b) => {
+          const distA = getDistance(lat0, lon0, a.lat, a.lon);
+          const distB = getDistance(lat0, lon0, b.lat, b.lon);
+          return distA - distB; // Yakından uzağa
+        });
       }
 
       setSunnyCities(cities);
@@ -102,19 +136,13 @@ export default function App() {
       <View style={styles.radioContainer}>
         <TouchableOpacity
           onPress={() => setRadioValue(1)}
-          style={[
-            styles.radioOption,
-            radioValue === 1 && styles.radioActive,
-          ]}
+          style={[styles.radioOption, radioValue === 1 && styles.radioActive]}
         >
           <Text style={styles.radioText}>Only Sunny</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setRadioValue(2)}
-          style={[
-            styles.radioOption,
-            radioValue === 2 && styles.radioActive,
-          ]}
+          style={[styles.radioOption, radioValue === 2 && styles.radioActive]}
         >
           <Text style={styles.radioText}>Partly Cloudy</Text>
         </TouchableOpacity>
@@ -138,7 +166,17 @@ export default function App() {
               }}
               style={styles.cityIcon}
             />
-            <Text style={styles.cityName}>{item.name}</Text>
+            <Text style={styles.cityName}>
+              {item.name}
+              {item.lat && currentCoords.lat
+                ? ` (${getDistance(
+                    currentCoords.lat,
+                    currentCoords.lon,
+                    item.lat,
+                    item.lon
+                  ).toFixed(1)} km)`
+                : ""}
+            </Text>
           </TouchableOpacity>
         )}
       />
