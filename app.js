@@ -17,7 +17,7 @@ export default function App() {
   const [radioValue, setRadioValue] = useState(1); // 1 = only sunny, 2 = partly cloudy
   const [currentCoords, setCurrentCoords] = useState({ lat: null, lon: null });
 
-  const apiKey = "437d4abaaf647b67ae0f5c70f46c4f14";
+  const apiKey = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
 
   // Haversine formülü ile iki nokta arası mesafeyi km cinsinden hesaplar
   function getDistance(lat1, lon1, lat2, lon2) {
