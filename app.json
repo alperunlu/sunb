@@ -13,15 +13,16 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "bundleIdentifier": "com.aatech.sunbusters",
+      "bundleIdentifier": "com.alu.sunbusters",
       "buildNumber": "1",
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Sunbusters needs your location to find sunny cities near you."
+        "NSLocationWhenInUseUsageDescription": "Sunbusters needs your location to find sunny cities near you.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.aatech.sunbusters",
+      "package": "com.alu.sunbusters",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -36,6 +37,12 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "description": "Find sunny and partly cloudy cities near your location."
+    "description": "Find sunny and partly cloudy cities near your location.",
+    "extra": {
+      "eas": {
+        "projectId": "53f88772-313f-489b-b344-3aa582f9acca"
+      }
+    },
+    "owner": "alperunlu"
   }
 }

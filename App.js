@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   Image,
   Linking,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import * as Location from "expo-location";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,6 +19,7 @@ export default function App() {
   const [sunnyCities, setSunnyCities] = useState([]);
   const [radioValue, setRadioValue] = useState(1); // 1 = only sunny, 2 = partly cloudy
   const [currentCoords, setCurrentCoords] = useState({ lat: null, lon: null });
+  const [loading, setLoading] = useState(false);
 
   const apiKey = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
 
@@ -34,6 +38,11 @@ export default function App() {
   }
 
   const getSunnyCities = async () => {
+    if (!apiKey) {
+      setLocationText("Error: API key not configured.");
+      return;
+    }
+    setLoading(true);
     setLocationText("Getting location...");
     setSunnyCities([]);
 
@@ -120,67 +129,74 @@ export default function App() {
       setSunnyCities(cities);
     } catch (err) {
       setLocationText(`Error: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <LinearGradient colors={["#e0f7fa", "#ffffff"]} style={styles.container}>
-      <Text style={styles.title}>☀️ Sunbusters</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#e0f7fa" />
+      <LinearGradient colors={["#e0f7fa", "#ffffff"]} style={styles.container}>
+        <Text style={styles.title}>☀️ Sunbusters</Text>
 
-      <TouchableOpacity style={styles.button} onPress={getSunnyCities}>
-        <Text style={styles.buttonText}>Find Sunny Cities</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.location}>{locationText}</Text>
-
-      <View style={styles.radioContainer}>
-        <TouchableOpacity
-          onPress={() => setRadioValue(1)}
-          style={[styles.radioOption, radioValue === 1 && styles.radioActive]}
-        >
-          <Text style={styles.radioText}>Only Sunny</Text>
+        <TouchableOpacity style={styles.button} onPress={getSunnyCities} disabled={loading}>
+          <Text style={styles.buttonText}>{loading ? "Searching..." : "Find Sunny Cities"}</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setRadioValue(2)}
-          style={[styles.radioOption, radioValue === 2 && styles.radioActive]}
-        >
-          <Text style={styles.radioText}>Partly Cloudy</Text>
-        </TouchableOpacity>
-      </View>
 
-      <FlatList
-        data={sunnyCities}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
+        {loading && <ActivityIndicator size="small" color="#FF9800" style={{ marginVertical: 10 }} />}
+
+        <Text style={styles.location}>{locationText}</Text>
+
+        <View style={styles.radioContainer}>
           <TouchableOpacity
-            style={styles.cityCard}
-            onPress={() =>
-              Linking.openURL(
-                `https://www.google.com/maps/search/?api=1&query=${item.name}`
-              )
-            }
+            onPress={() => setRadioValue(1)}
+            style={[styles.radioOption, radioValue === 1 && styles.radioActive]}
           >
-            <Image
-              source={{
-                uri: `https://openweathermap.org/img/w/${item.icon}.png`,
-              }}
-              style={styles.cityIcon}
-            />
-            <Text style={styles.cityName}>
-              {item.name}
-              {item.lat && currentCoords.lat
-                ? ` (${getDistance(
-                    currentCoords.lat,
-                    currentCoords.lon,
-                    item.lat,
-                    item.lon
-                  ).toFixed(1)} km)`
-                : ""}
-            </Text>
+            <Text style={styles.radioText}>Only Sunny</Text>
           </TouchableOpacity>
-        )}
-      />
-    </LinearGradient>
+          <TouchableOpacity
+            onPress={() => setRadioValue(2)}
+            style={[styles.radioOption, radioValue === 2 && styles.radioActive]}
+          >
+            <Text style={styles.radioText}>Partly Cloudy</Text>
+          </TouchableOpacity>
+        </View>
+
+        <FlatList
+          data={sunnyCities}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.cityCard}
+              onPress={() =>
+                Linking.openURL(
+                  `https://www.google.com/maps/search/?api=1&query=${item.name}`
+                )
+              }
+            >
+              <Image
+                source={{
+                  uri: `https://openweathermap.org/img/w/${item.icon}.png`,
+                }}
+                style={styles.cityIcon}
+              />
+              <Text style={styles.cityName}>
+                {item.name}
+                {item.lat && currentCoords.lat
+                  ? ` (${getDistance(
+                      currentCoords.lat,
+                      currentCoords.lon,
+                      item.lat,
+                      item.lon
+                    ).toFixed(1)} km)`
+                  : ""}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
