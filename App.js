@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
-  useColorScheme,
+  Appearance,
 } from "react-native";
 import * as Location from "expo-location";
 import { LinearGradient } from "expo-linear-gradient";
@@ -50,9 +50,15 @@ export default function App() {
   const [radioValue, setRadioValue] = useState(1);
   const [currentCoords, setCurrentCoords] = useState({ lat: null, lon: null });
   const [loading, setLoading] = useState(false);
+  const [isDark, setIsDark] = useState(Appearance.getColorScheme() === "dark");
 
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  useEffect(() => {
+    const sub = Appearance.addChangeListener(({ colorScheme }) => {
+      setIsDark(colorScheme === "dark");
+    });
+    return () => sub.remove();
+  }, []);
+
   const t = isDark ? theme.dark : theme.light;
 
   const apiKey = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
@@ -169,7 +175,7 @@ export default function App() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg[0] }}>
       <StatusBar barStyle={t.statusBar} backgroundColor={t.statusBarBg} />
-      <LinearGradient colors={t.bg} style={styles.container}>
+      <LinearGradient key={isDark ? "dark" : "light"} colors={t.bg} style={styles.container}>
         <Text style={[styles.title, { color: t.title }]}>☀️ Sunbusters</Text>
 
         <TouchableOpacity style={styles.button} onPress={getSunnyCities} disabled={loading}>
