@@ -1,6 +1,6 @@
 # Sunbusters
 
-##Privacy Policy
+# Privacy Policy
 
 **Last updated:** July 2026
 
