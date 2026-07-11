@@ -19,9 +19,6 @@ Sunbusters does not collect, store, or share any personal information. No accoun
 ## Changes
 This policy may be updated occasionally. Continued use of the app constitutes acceptance of the current policy.
 
-## Contact
-For questions: alpervanlimburg@icloud.com
-
 Find sunny and partly cloudy cities near your location.
 
 Built with **Expo (React Native)**. Works on iOS and Android.
