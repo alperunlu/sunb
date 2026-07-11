@@ -10,22 +10,55 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  useColorScheme,
 } from "react-native";
 import * as Location from "expo-location";
 import { LinearGradient } from "expo-linear-gradient";
 
+const theme = {
+  light: {
+    bg: ["#e0f7fa", "#ffffff"],
+    title: "#00796B",
+    text: "#444",
+    cityName: "#333",
+    cardBg: "#ffffff",
+    radioBg: "#f1f1f1",
+    radioActive: "#4CAF50",
+    radioText: "#000",
+    statusBar: "dark-content",
+    statusBarBg: "#e0f7fa",
+    shadow: "#000",
+  },
+  dark: {
+    bg: ["#0d1b2a", "#1b2838"],
+    title: "#80cbc4",
+    text: "#aaa",
+    cityName: "#e0e0e0",
+    cardBg: "#1e2a3a",
+    radioBg: "#2a3a4a",
+    radioActive: "#388E3C",
+    radioText: "#e0e0e0",
+    statusBar: "light-content",
+    statusBarBg: "#0d1b2a",
+    shadow: "#000",
+  },
+};
+
 export default function App() {
   const [locationText, setLocationText] = useState("");
   const [sunnyCities, setSunnyCities] = useState([]);
-  const [radioValue, setRadioValue] = useState(1); // 1 = only sunny, 2 = partly cloudy
+  const [radioValue, setRadioValue] = useState(1);
   const [currentCoords, setCurrentCoords] = useState({ lat: null, lon: null });
   const [loading, setLoading] = useState(false);
 
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const t = isDark ? theme.dark : theme.light;
+
   const apiKey = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
 
-  // Haversine formülü ile iki nokta arası mesafeyi km cinsinden hesaplar
   function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Dünya yarıçapı (km)
+    const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
@@ -34,7 +67,7 @@ export default function App() {
         Math.cos((lat2 * Math.PI) / 180) *
         Math.sin(dLon / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // km
+    return R * c;
   }
 
   const getSunnyCities = async () => {
@@ -115,14 +148,13 @@ export default function App() {
         }
       }
 
-      // Mesafeye göre sıralama
       if (cities.length === 0) {
         cities.push({ name: "No cities found.", icon: "50d" });
       } else {
         cities.sort((a, b) => {
           const distA = getDistance(lat0, lon0, a.lat, a.lon);
           const distB = getDistance(lat0, lon0, b.lat, b.lon);
-          return distA - distB; // Yakından uzağa
+          return distA - distB;
         });
       }
 
@@ -135,10 +167,10 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#e0f7fa" />
-      <LinearGradient colors={["#e0f7fa", "#ffffff"]} style={styles.container}>
-        <Text style={styles.title}>☀️ Sunbusters</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg[0] }}>
+      <StatusBar barStyle={t.statusBar} backgroundColor={t.statusBarBg} />
+      <LinearGradient colors={t.bg} style={styles.container}>
+        <Text style={[styles.title, { color: t.title }]}>☀️ Sunbusters</Text>
 
         <TouchableOpacity style={styles.button} onPress={getSunnyCities} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? "Searching..." : "Find Sunny Cities"}</Text>
@@ -146,20 +178,20 @@ export default function App() {
 
         {loading && <ActivityIndicator size="small" color="#FF9800" style={{ marginVertical: 10 }} />}
 
-        <Text style={styles.location}>{locationText}</Text>
+        <Text style={[styles.location, { color: t.text }]}>{locationText}</Text>
 
         <View style={styles.radioContainer}>
           <TouchableOpacity
             onPress={() => setRadioValue(1)}
-            style={[styles.radioOption, radioValue === 1 && styles.radioActive]}
+            style={[styles.radioOption, { backgroundColor: t.radioBg }, radioValue === 1 && { backgroundColor: t.radioActive }]}
           >
-            <Text style={styles.radioText}>Only Sunny</Text>
+            <Text style={[styles.radioText, { color: t.radioText }]}>Only Sunny</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setRadioValue(2)}
-            style={[styles.radioOption, radioValue === 2 && styles.radioActive]}
+            style={[styles.radioOption, { backgroundColor: t.radioBg }, radioValue === 2 && { backgroundColor: t.radioActive }]}
           >
-            <Text style={styles.radioText}>Partly Cloudy</Text>
+            <Text style={[styles.radioText, { color: t.radioText }]}>Partly Cloudy</Text>
           </TouchableOpacity>
         </View>
 
@@ -168,7 +200,7 @@ export default function App() {
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.cityCard}
+              style={[styles.cityCard, { backgroundColor: t.cardBg, shadowColor: t.shadow }]}
               onPress={() =>
                 Linking.openURL(
                   `https://www.google.com/maps/search/?api=1&query=${item.name}`
@@ -181,7 +213,7 @@ export default function App() {
                 }}
                 style={styles.cityIcon}
               />
-              <Text style={styles.cityName}>
+              <Text style={[styles.cityName, { color: t.cityName }]}>
                 {item.name}
                 {item.lat && currentCoords.lat
                   ? ` (${getDistance(
@@ -207,7 +239,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginVertical: 20,
-    color: "#00796B",
   },
   button: {
     backgroundColor: "#FF9800",
@@ -216,7 +247,6 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
     marginVertical: 10,
-    shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
@@ -231,7 +261,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     textAlign: "center",
     fontSize: 16,
-    color: "#444",
   },
   radioContainer: {
     flexDirection: "row",
@@ -239,32 +268,25 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   radioOption: {
-    backgroundColor: "#f1f1f1",
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 20,
     marginHorizontal: 5,
   },
-  radioActive: {
-    backgroundColor: "#4CAF50",
-  },
   radioText: {
-    color: "#000",
     fontWeight: "bold",
   },
   cityCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffffff",
     padding: 15,
     borderRadius: 12,
     marginVertical: 6,
-    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 3,
     elevation: 3,
   },
   cityIcon: { width: 40, height: 40, marginRight: 15 },
-  cityName: { fontSize: 18, fontWeight: "600", color: "#333" },
+  cityName: { fontSize: 18, fontWeight: "600" },
 });
