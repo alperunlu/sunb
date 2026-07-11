@@ -50,6 +50,7 @@ export default function App() {
   const [radioValue, setRadioValue] = useState(1);
   const [currentCoords, setCurrentCoords] = useState({ lat: null, lon: null });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const [isDark, setIsDark] = useState(Appearance.getColorScheme() === "dark");
 
   useEffect(() => {
@@ -76,97 +77,145 @@ export default function App() {
     return R * c;
   }
 
+  const searchAtPoint = async (lat, lon, citySet) => {
+    const url = `https://api.openweathermap.org/data/2.5/find?lat=${lat}&lon=${lon}&cnt=50&appid=${apiKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!data.list) return [];
+
+    const results = [];
+    for (const city of data.list) {
+      const cityName = city.name;
+      if (citySet.has(cityName)) continue;
+
+      const description = city.weather[0].description;
+      const matches =
+        radioValue === 1
+          ? description === "clear sky"
+          : description === "clear sky" || description === "few clouds";
+
+      if (matches) {
+        results.push({
+          name: cityName,
+          icon: city.weather[0].icon,
+          lat: city.coord.lat,
+          lon: city.coord.lon,
+        });
+        citySet.add(cityName);
+      }
+    }
+    return results;
+  };
+
+  const sortByDistance = (arr, lat0, lon0) =>
+    arr.sort(
+      (a, b) =>
+        getDistance(lat0, lon0, a.lat, a.lon) -
+        getDistance(lat0, lon0, b.lat, b.lon)
+    );
+
   const getSunnyCities = async () => {
     if (!apiKey) {
       setLocationText("Error: API key not configured.");
+      setError(true);
       return;
     }
     setLoading(true);
-    setLocationText("Getting location...");
+    setError(false);
     setSunnyCities([]);
 
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        setLocationText("Permission denied.");
+        setLocationText("Permission denied. Enable location in Settings.");
+        setError(true);
         return;
       }
 
       let location = await Location.getCurrentPositionAsync({});
       let lat0 = location.coords.latitude;
       let lon0 = location.coords.longitude;
-
       setCurrentCoords({ lat: lat0, lon: lon0 });
-      setLocationText(`Your location: ${lat0.toFixed(4)}, ${lon0.toFixed(4)}`);
 
-      const latitudes = [lat0 - 0.6, lat0 - 0.3, lat0, lat0 + 0.3, lat0 + 0.6];
-      const longitudes = [lon0 - 0.6, lon0, lon0 + 0.6];
+      const citySet = new Set();
+      const stopAt = 10;
 
-      let citySet = new Set();
-      let cities = [];
+      // Stage 1: nearest 50 cities
+      setLocationText("Searching nearby...");
+      let cities = await searchAtPoint(lat0, lon0, citySet);
 
-      for (let lat of latitudes) {
-        for (let lon of longitudes) {
-          const url = `https://api.openweathermap.org/data/2.5/find?lat=${lat}&lon=${lon}&cnt=50&appid=${apiKey}`;
-          try {
-            const response = await fetch(url);
-            const data = await response.json();
+      if (cities.length > 0) {
+        const sorted = sortByDistance(cities, lat0, lon0);
+        setSunnyCities(sorted);
+        setLocationText(
+          `Your location: ${lat0.toFixed(4)}, ${lon0.toFixed(4)}`
+        );
+        return;
+      }
 
-            if (data.list && data.list.length > 0) {
-              data.list.forEach((city) => {
-                const cityName = city.name;
-                const description = city.weather[0].description;
-                const iconCode = city.weather[0].icon;
+      // Stage 2: wider grid (8 points around user, ~50-100km apart)
+      setLocationText("No sunny cities nearby. Searching wider area...");
+      const offsets2 = [
+        [0.5, 0.5], [-0.5, 0.5],
+        [0.5, -0.5], [-0.5, -0.5],
+        [1.0, 0], [-1.0, 0],
+        [0, 1.0], [0, -1.0],
+      ];
 
-                if (
-                  radioValue === 1 &&
-                  description === "clear sky" &&
-                  !citySet.has(cityName)
-                ) {
-                  cities.push({
-                    name: cityName,
-                    icon: iconCode,
-                    lat: city.coord.lat,
-                    lon: city.coord.lon,
-                  });
-                  citySet.add(cityName);
-                }
+      for (let i = 0; i < offsets2.length; i++) {
+        const [dLat, dLon] = offsets2[i];
+        const more = await searchAtPoint(
+          lat0 + dLat,
+          lon0 + dLon,
+          citySet
+        );
+        if (more.length > 0) {
+          cities = [...cities, ...more];
+          const sorted = sortByDistance(cities, lat0, lon0);
+          setSunnyCities(sorted);
+          setLocationText(
+            `Found ${cities.length} sunny cities... (searching wider)`
+          );
+        }
+        if (cities.length >= stopAt) break;
+      }
 
-                if (
-                  radioValue === 2 &&
-                  (description === "clear sky" ||
-                    description === "few clouds") &&
-                  !citySet.has(cityName)
-                ) {
-                  cities.push({
-                    name: cityName,
-                    icon: iconCode,
-                    lat: city.coord.lat,
-                    lon: city.coord.lon,
-                  });
-                  citySet.add(cityName);
-                }
-              });
-            }
-          } catch (err) {
-            setLocationText(`Error fetching data: ${err}`);
+      // Stage 3: even wider grid (8 points, ~150-220km apart)
+      if (cities.length < stopAt) {
+        setLocationText("Still searching... Expanding range...");
+        const offsets3 = [
+          [1.5, 1.5], [-1.5, 1.5],
+          [1.5, -1.5], [-1.5, -1.5],
+          [2.0, 0], [-2.0, 0],
+          [0, 2.0], [0, -2.0],
+        ];
+
+        for (let i = 0; i < offsets3.length; i++) {
+          const [dLat, dLon] = offsets3[i];
+          const more = await searchAtPoint(
+            lat0 + dLat,
+            lon0 + dLon,
+            citySet
+          );
+          if (more.length > 0) {
+            cities = [...cities, ...more];
+            const sorted = sortByDistance(cities, lat0, lon0);
+            setSunnyCities(sorted);
+            setLocationText(
+              `Found ${cities.length} sunny cities... (expanded range)`
+            );
           }
+          if (cities.length >= stopAt) break;
         }
       }
 
       if (cities.length === 0) {
-        cities.push({ name: "No cities found.", icon: "50d" });
-      } else {
-        cities.sort((a, b) => {
-          const distA = getDistance(lat0, lon0, a.lat, a.lon);
-          const distB = getDistance(lat0, lon0, b.lat, b.lon);
-          return distA - distB;
-        });
+        setSunnyCities([{ name: "No cities found.", icon: "50d" }]);
       }
-
-      setSunnyCities(cities);
+      setLocationText(`Your location: ${lat0.toFixed(4)}, ${lon0.toFixed(4)}`);
     } catch (err) {
       setLocationText(`Error: ${err.message}`);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -186,18 +235,30 @@ export default function App() {
 
         <Text style={[styles.location, { color: t.text }]}>{locationText}</Text>
 
+        {sunnyCities.length === 0 && !loading && !error && !locationText && (
+          <Text style={[styles.welcome, { color: t.text }]}>
+            Tap the button above to find sunny cities!
+          </Text>
+        )}
+
         <View style={styles.radioContainer}>
           <TouchableOpacity
             onPress={() => setRadioValue(1)}
+            accessibilityLabel="Filter: Only Sunny"
+            accessibilityRole="button"
+            accessibilityState={{ selected: radioValue === 1 }}
             style={[styles.radioOption, { backgroundColor: t.radioBg }, radioValue === 1 && { backgroundColor: t.radioActive }]}
           >
             <Text style={[styles.radioText, { color: t.radioText }]}>Only Sunny</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setRadioValue(2)}
+            accessibilityLabel="Filter: Partly Cloudy"
+            accessibilityRole="button"
+            accessibilityState={{ selected: radioValue === 2 }}
             style={[styles.radioOption, { backgroundColor: t.radioBg }, radioValue === 2 && { backgroundColor: t.radioActive }]}
           >
-            <Text style={[styles.radioText, { color: t.radioText }]}>Partly Cloudy</Text>
+            <Text style={[styles.radioText, { color: t.radioText }]}>Partly Sunny</Text>
           </TouchableOpacity>
         </View>
 
@@ -207,6 +268,7 @@ export default function App() {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.cityCard, { backgroundColor: t.cardBg, shadowColor: t.shadow }]}
+              disabled={item.name === "No cities found."}
               onPress={() =>
                 Linking.openURL(
                   `https://www.google.com/maps/search/?api=1&query=${item.name}`
@@ -295,4 +357,11 @@ const styles = StyleSheet.create({
   },
   cityIcon: { width: 40, height: 40, marginRight: 15 },
   cityName: { fontSize: 18, fontWeight: "600" },
+  welcome: {
+    fontSize: 16,
+    textAlign: "center",
+    marginVertical: 20,
+    paddingHorizontal: 20,
+    lineHeight: 24,
+  },
 });

@@ -14,8 +14,7 @@
     "expo-location": "~19.0.8",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
-    "react-native": "0.81.5",
-    "react-native-paper": "4.9.2"
+    "react-native": "0.81.5"
   },
   "private": true
 }
